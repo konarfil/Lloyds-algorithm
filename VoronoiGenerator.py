@@ -14,7 +14,7 @@ class Vertex:
 
 class Edge:
 	"""
-	Class representing an edge connection two vertices
+	Class representing an edge connecting two vertices
 	"""
 	def __init__(self, p1 : Vertex, p2 : Vertex):
 		"""
@@ -62,9 +62,9 @@ class Triangle:
 	
 class DelaunayGrid:
 	"""
-	Class used to calculad Delaunay triangulation from list of vertices
+	Class used to calculate Delaunay triangulation from list of vertices
 	It uses the Bowyer-Watson algorithm
-	Inspired by https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
+	Code inspired by https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
 	"""
 	def __init__(self, vertices : List[Vertex]):
 		"""
@@ -73,13 +73,9 @@ class DelaunayGrid:
 		self.vertices = vertices
 		self.triangulation = []
 
-		#find bouding box of the vertices
-		max_x = max(p.x for p in vertices)
-		min_x = min(p.x for p in vertices)
-		max_y = max(p.y for p in vertices)
-		min_y = min(p.y for p in vertices)
-		self.box_size = max(max_x - min_x, max_y - min_y)*1.05
-		self.box_middle = Vertex((min_x + max_x) / 2, (min_y + max_y) / 2)
+		#define bounding box
+		self.box_size = 1
+		self.box_middle = Vertex(0.5, 0.5)
 
 	def triangulate(self):
 		self.triangulation = []
@@ -89,7 +85,7 @@ class DelaunayGrid:
 								Vertex(self.box_middle.x, self.box_middle.y + 5*self.box_size))
 		self.triangulation.append(supertriangle)
 
-		#conctruct triangulation by adding vertices one by one
+		#construct triangulation by adding vertices one by one
 		for vertex in self.vertices:
 			badTriangles = []
 			for triangle in self.triangulation:
@@ -136,6 +132,7 @@ class VoronoiGrid:
 		Initialize Voronoi grid with dual Delaunay grid
 		"""
 		self.delaunayGrid = delaunayGrid
+
 		#create dictionary of cells; each cell is represented by a point from the Delaunay grid and a list of edges
 		self.cells = {}
 		for vertex in delaunayGrid.vertices:
@@ -169,7 +166,7 @@ class VoronoiGrid:
 	def find_finite_edge(self, edge : Edge):
 		"""
 		Finds intersection of the edge with the bounding box
-		Returns edge ending on the bouding box and the intersection
+		Returns only part of the edge which is in the bounding box
 		"""
 		for box_edge in self.box_edges:
 			intersection = self.edge_edge_intersection(box_edge, edge)
@@ -214,6 +211,7 @@ class VoronoiGrid:
 									self.cells[edge1.p[0]].append(middle_edge)
 								if middle_edge not in self.cells[edge1.p[1]]:
 									self.cells[edge1.p[1]].append(middle_edge)
+
 					#found an edge on the rim of the Delaunay grid -> we need to construct an infinite edge of the Voronoi grid
 					#we construct a line between the middle of the triangle and a second point lying outside of the plotting area
 					#also we skip edges which would be outside of the bouding box
@@ -222,7 +220,7 @@ class VoronoiGrid:
 						
 						edge_midpoint = Vertex((edge1.p[0].x + edge1.p[1].x) / 2, (edge1.p[0].y + edge1.p[1].y) / 2)
 
-						#calculate vector conection between the middle of the triangle and the middle of the edge
+						#calculate vector connecting the middle of the triangle and the middle of the edge
 						line_vector = Vertex(triangle1.middle.x - edge_midpoint.x, triangle1.middle.y - edge_midpoint.y)
 
 						#find two candidate points on the line connecting triangle midpoint and edge midpoint
