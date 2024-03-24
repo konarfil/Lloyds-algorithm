@@ -3,5 +3,7 @@ A small project implementing the Lloyd's algorithm. The algorithm takes a Vorono
 # Usage
 Running the main.py script creates a Voronoi grid with 100 cells and then runs 30 iterations of the Lloyd's algorithm. A PNG image of the grid is saved after each iteration.
 # Images
-![Initial Voronoi grid](https://github.com/konarfil/Lloyds-algorithm/blob/main/iteration_0.png)
-![After 30 iterations](https://github.com/konarfil/Lloyds-algorithm/blob/main/iteration_29.png)
+<p float="left">
+  <img src="https://github.com/konarfil/Lloyds-algorithm/blob/main/iteration_0.png" width="400" />
+  <img src="https://github.com/konarfil/Lloyds-algorithm/blob/main/iteration_29.png" width="400" /> 
+</p>
