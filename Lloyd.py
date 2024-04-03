@@ -2,7 +2,6 @@ import random
 from VoronoiGenerator import Vertex, DelaunayGrid, VoronoiGrid
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-import sys
 
 class Lloyd:
     def __init__(self, N_points):
@@ -15,12 +14,9 @@ class Lloyd:
         self.vertices.append(Vertex(0.5, 0.75))
         self.vertices.append(Vertex(0.75, 0.75))
         self.vertices.append(Vertex(0.5, 0.25))
-        seed = random.randrange(sys.maxsize)
-        rng = random.Random(seed)
-        print("Seed was:", seed)
-        return
+
         for i in range(N_points):
-            self.vertices.append(Vertex(rng.random(), rng.random()))
+            self.vertices.append(Vertex(random.random(), random.random()))
     
     def iterate(self, N_iterations):
         """
@@ -46,11 +42,6 @@ class Lloyd:
             for vertex in self.vertices:
                 vertices_x.append(vertex.x)
                 vertices_y.append(vertex.y)
-
-            for triangle in delGrid.triangulation:
-                for edge in triangle.edges:
-                    line = Polygon([(edge.p[0].x, edge.p[0].y), (edge.p[1].x, edge.p[1].y)], closed=True, edgecolor='b', facecolor='none')
-                    ax.add_patch(line)
 
             ax.scatter(vertices_x, vertices_y, color='black', label='Points')
             ax.set_xlim(delGrid.box_middle.x - delGrid.box_size / 2 - 0.1, delGrid.box_middle.x + delGrid.box_size / 2 + 0.1)
