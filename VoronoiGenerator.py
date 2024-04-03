@@ -152,10 +152,20 @@ class VoronoiGrid:
 		Formulas from https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
 		"""
 
-		t = ((edge1.p[0].x - edge2.p[0].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge2.p[0].y)*(edge2.p[0].x - edge2.p[1].x)) / \
-			((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x))
-		u = -((edge1.p[0].x - edge1.p[1].x)*(edge1.p[0].y - edge2.p[0].y) - (edge1.p[0].y - edge1.p[1].y)*(edge1.p[0].x - edge2.p[0].x)) / \
-			((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x))
+		t = 0
+		u = 0
+		#check if the lines are paralel
+		if ((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x)) == 0:
+			return None
+		else:
+			t = ((edge1.p[0].x - edge2.p[0].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge2.p[0].y)*(edge2.p[0].x - edge2.p[1].x)) / \
+				((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x))
+		#check if the lines are paralel
+		if ((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x)) == 0:
+			return None
+		else:
+			u = -((edge1.p[0].x - edge1.p[1].x)*(edge1.p[0].y - edge2.p[0].y) - (edge1.p[0].y - edge1.p[1].y)*(edge1.p[0].x - edge2.p[0].x)) / \
+				((edge1.p[0].x - edge1.p[1].x)*(edge2.p[0].y - edge2.p[1].y) - (edge1.p[0].y - edge1.p[1].y)*(edge2.p[0].x - edge2.p[1].x))
 		
 		if t > 0 and t < 1 and u > 0 and u < 1:
 			return Vertex(edge1.p[0].x + t*(edge1.p[1].x - edge1.p[0].x), edge1.p[0].y + t*(edge1.p[1].y - edge1.p[0].y))
@@ -168,15 +178,23 @@ class VoronoiGrid:
 		Finds intersection of the edge with the bounding box
 		Returns only part of the edge which is in the bounding box
 		"""
+		intersections = []
 		for box_edge in self.box_edges:
 			intersection = self.edge_edge_intersection(box_edge, edge)
 			if intersection != None:
-				if max(abs(edge.p[0].x - self.delaunayGrid.box_middle.x),
+				intersections.append(intersection)
+
+		if len(intersections) == 0:
+			return (None, None)
+		elif len(intersections) == 1:
+			if max(abs(edge.p[0].x - self.delaunayGrid.box_middle.x),
 		   		 	abs(edge.p[0].y - self.delaunayGrid.box_middle.y)) < self.delaunayGrid.box_size / 2:
-					return (intersection, Edge(edge.p[0], intersection))
-				else:
-					return (intersection, Edge(edge.p[1], intersection))
-		return (None, None)
+				return (intersections, Edge(edge.p[0], intersections[0]))
+			else:
+				return (intersections, Edge(edge.p[1], intersections[0]))
+		else:
+			return (intersections, Edge(intersections[0], intersections[1]))
+
 
 	def generate(self):
 		"""
@@ -200,13 +218,6 @@ class VoronoiGrid:
 								shared = True
 								middle_edge = Edge(triangle1.middle, triangle2.middle)
 
-								#check if the edge is in the bounding box
-								if max(abs(middle_edge.p[0].x - self.delaunayGrid.box_middle.x), \
-								abs(middle_edge.p[0].y - self.delaunayGrid.box_middle.y)) >= self.delaunayGrid.box_size / 2 and \
-								max(abs(middle_edge.p[1].x - self.delaunayGrid.box_middle.x), \
-								abs(middle_edge.p[1].y - self.delaunayGrid.box_middle.y)) >= self.delaunayGrid.box_size / 2:
-									continue
-
 								if middle_edge not in self.cells[edge1.p[0]]:
 									self.cells[edge1.p[0]].append(middle_edge)
 								if middle_edge not in self.cells[edge1.p[1]]:
@@ -214,23 +225,17 @@ class VoronoiGrid:
 
 					#found an edge on the rim of the Delaunay grid -> we need to construct an infinite edge of the Voronoi grid
 					#we construct a line between the middle of the triangle and a second point lying outside of the plotting area
-					#also we skip edges which would be outside of the bouding box
-					if shared == False and max(abs(triangle1.middle.x - self.delaunayGrid.box_middle.x), \
-								abs(triangle1.middle.y - self.delaunayGrid.box_middle.y)) < self.delaunayGrid.box_size / 2:
-						
-						edge_midpoint = Vertex((edge1.p[0].x + edge1.p[1].x) / 2, (edge1.p[0].y + edge1.p[1].y) / 2)
-
-						#calculate vector connecting the middle of the triangle and the middle of the edge
-						line_vector = Vertex(triangle1.middle.x - edge_midpoint.x, triangle1.middle.y - edge_midpoint.y)
-
+					if shared == False:
+						#calculate vector perpendicular to the edge
+						line_vector = Vertex(edge1.p[0].y - edge1.p[1].y, edge1.p[1].x - edge1.p[0].x)
 						#find two candidate points on the line connecting triangle midpoint and edge midpoint
 						candidate1 = Vertex(0, 0)
 						candidate2 = Vertex(0, 0)
 						if line_vector.x == 0:
 							candidate1.x = triangle1.middle.x
-							candidate1.y = triangle1.middle.y + self.delaunayGrid.box_size
+							candidate1.y = self.delaunayGrid.box_middle.y + self.delaunayGrid.box_size
 							candidate2.x = triangle1.middle.x
-							candidate2.y = triangle1.middle.y - self.delaunayGrid.box_size
+							candidate2.y = self.delaunayGrid.box_middle.y - self.delaunayGrid.box_size
 						else:
 							candidate1.x = self.delaunayGrid.box_middle.x - self.delaunayGrid.box_size
 							candidate1.y = triangle1.middle.y + line_vector.y/line_vector.x*(candidate1.x - triangle1.middle.x)
@@ -267,35 +272,79 @@ class VoronoiGrid:
 						#this whole infitite edge thing is probably terribly overcomplicated but atleast it works
 			
 			#finally we need to find Voronoi cells which intersect the bouding box and add edges so that they are not infinite
-			for cell_edges in self.cells.values():
-				intersecitons = []
+			for cell_vertex, cell_edges in self.cells.items():
+				intersections = []
 				infinite_edges = []
 				finite_edges = []
 				for edge in cell_edges:
-					interseciton, finite_edge = self.find_finite_edge(edge)
-					if interseciton != None:
-						intersecitons.append(interseciton)
+					edge_intersections, finite_edge = self.find_finite_edge(edge)
+					if edge_intersections != None:
+						intersections += edge_intersections
 						infinite_edges.append(edge)
 						finite_edges.append(finite_edge)
+					#we also remove edges outside of the bounding box
+					elif max(abs(edge.p[0].x - self.delaunayGrid.box_middle.x), \
+						abs(edge.p[0].y - self.delaunayGrid.box_middle.y)) >= self.delaunayGrid.box_size / 2 and \
+						max(abs(edge.p[1].x - self.delaunayGrid.box_middle.x), \
+						abs(edge.p[1].y - self.delaunayGrid.box_middle.y)) >= self.delaunayGrid.box_size / 2:
+						infinite_edges.append(edge)
 
-				if len(intersecitons) == 0:
+				if len(intersections) == 0:
 					continue
 				
 				for i in range(len(infinite_edges)):
 					cell_edges.remove(infinite_edges[i])
-					cell_edges.append(finite_edges[i])
+				
+				cell_edges += finite_edges
 
+				#intersections are on the same edge of the bounding box
+				if (abs(intersections[0].x - intersections[1].x) < 0.00001 and 
+					self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) > 0.00001) or \
+					(abs(intersections[0].y - intersections[1].y) < 0.00001 and 
+					self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) > 0.00001):
+
+					cell_edges.append(Edge(intersections[0], intersections[1]))
 				#intersections are on different edges of the bounding box
-				if abs(intersecitons[0].x - intersecitons[1].x) > 0.001 and \
-					abs(intersecitons[0].y - intersecitons[1].y) > 0.001:
-					corner = Vertex(0, 0)
-					if abs(intersecitons[0].x - self.delaunayGrid.box_middle.x) > abs(intersecitons[1].x - self.delaunayGrid.box_middle.x):
-						corner.x = intersecitons[0].x
-						corner.y = intersecitons[1].y
-					else:
-						corner.x = intersecitons[1].x
-						corner.y = intersecitons[0].y
-					cell_edges.append(Edge(intersecitons[0], corner))
-					cell_edges.append(Edge(intersecitons[1], corner))
 				else:
-					cell_edges.append(Edge(intersecitons[0], intersecitons[1]))
+					#intersections are on paralel edges of the bounding box -> we need to add two corners
+					if self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) < 0.00001:
+						if cell_vertex.y - self.delaunayGrid.box_middle.y <= 0:
+							corners_y = self.delaunayGrid.box_middle.y - self.delaunayGrid.box_size / 2
+							corner1 = Vertex(intersections[0].x, corners_y)
+							corner2 = Vertex(intersections[1].x, corners_y)
+							cell_edges.append(Edge(intersections[0], corner1))
+							cell_edges.append(Edge(intersections[1], corner2))
+							cell_edges.append(Edge(corner1, corner2))
+						else:
+							corners_y = self.delaunayGrid.box_middle.y + self.delaunayGrid.box_size / 2
+							corner1 = Vertex(intersections[0].x, corners_y)
+							corner2 = Vertex(intersections[1].x, corners_y)
+							cell_edges.append(Edge(intersections[0], corner1))
+							cell_edges.append(Edge(intersections[1], corner2))
+							cell_edges.append(Edge(corner1, corner2))
+
+					elif self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) < 0.00001:
+						if cell_vertex.x - self.delaunayGrid.box_middle.x <= 0:
+							corners_x = self.delaunayGrid.box_middle.x - self.delaunayGrid.box_size / 2
+							corner1 = Vertex(corners_x, intersections[0].y)
+							corner2 = Vertex(corners_x, intersections[1].y)
+							cell_edges.append(Edge(intersections[0], corner1))
+							cell_edges.append(Edge(intersections[1], corner2))
+							cell_edges.append(Edge(corner1, corner2))
+						else:
+							corners_x = self.delaunayGrid.box_middle.x + self.delaunayGrid.box_size / 2
+							corner1 = Vertex(corners_x, intersections[0].y)
+							corner2 = Vertex(corners_x, intersections[1].y)
+							cell_edges.append(Edge(intersections[0], corner1))
+							cell_edges.append(Edge(intersections[1], corner2))
+							cell_edges.append(Edge(corner1, corner2))
+					#intersetions are on perpendicular edges of the bounding box
+					elif abs(intersections[0].x - self.delaunayGrid.box_middle.x) > abs(intersections[1].x - self.delaunayGrid.box_middle.x):
+						corner = Vertex(intersections[0].x, intersections[1].y)
+						cell_edges.append(Edge(intersections[0], corner))
+						cell_edges.append(Edge(intersections[1], corner))
+					else:
+						corner = Vertex(intersections[1].x, intersections[0].y)
+						cell_edges.append(Edge(intersections[0], corner))
+						cell_edges.append(Edge(intersections[1], corner))
+					

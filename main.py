@@ -5,5 +5,5 @@ import random
 from Lloyd import Lloyd
 
 if __name__ == "__main__":
-    algorithm = Lloyd(100)
-    algorithm.iterate(30)
+    algorithm = Lloyd(10)
+    algorithm.iterate(20)

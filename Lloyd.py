@@ -2,6 +2,7 @@ import random
 from VoronoiGenerator import Vertex, DelaunayGrid, VoronoiGrid
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
+import sys
 
 class Lloyd:
     def __init__(self, N_points):
@@ -10,8 +11,16 @@ class Lloyd:
         Randomly choose positions of initial vertices
         """
         self.vertices = []
+        self.vertices.append(Vertex(0.25, 0.75))
+        self.vertices.append(Vertex(0.5, 0.75))
+        self.vertices.append(Vertex(0.75, 0.75))
+        self.vertices.append(Vertex(0.5, 0.25))
+        seed = random.randrange(sys.maxsize)
+        rng = random.Random(seed)
+        print("Seed was:", seed)
+        return
         for i in range(N_points):
-            self.vertices.append(Vertex(random.random(), random.random()))
+            self.vertices.append(Vertex(rng.random(), rng.random()))
     
     def iterate(self, N_iterations):
         """
@@ -37,9 +46,15 @@ class Lloyd:
             for vertex in self.vertices:
                 vertices_x.append(vertex.x)
                 vertices_y.append(vertex.y)
+
+            for triangle in delGrid.triangulation:
+                for edge in triangle.edges:
+                    line = Polygon([(edge.p[0].x, edge.p[0].y), (edge.p[1].x, edge.p[1].y)], closed=True, edgecolor='b', facecolor='none')
+                    ax.add_patch(line)
+
             ax.scatter(vertices_x, vertices_y, color='black', label='Points')
-            ax.set_xlim(delGrid.box_middle.x - delGrid.box_size / 2, delGrid.box_middle.x + delGrid.box_size / 2)
-            ax.set_ylim(delGrid.box_middle.y - delGrid.box_size / 2, delGrid.box_middle.y + delGrid.box_size / 2)
+            ax.set_xlim(delGrid.box_middle.x - delGrid.box_size / 2 - 0.1, delGrid.box_middle.x + delGrid.box_size / 2 + 0.1)
+            ax.set_ylim(delGrid.box_middle.y - delGrid.box_size / 2 - 0.1, delGrid.box_middle.y + delGrid.box_size / 2 + 0.1)
             ax.set_aspect('equal', adjustable='box')
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
@@ -49,7 +64,8 @@ class Lloyd:
 
             #for each voronoi cell calculate centroid
             new_vertices = []
-            for cell_edges in vorGrid.cells.values():
+            #for cell_edges in vorGrid.cells.values():
+            for vertex, cell_edges in vorGrid.cells.items():
                 first_vertex = cell_edges[0].p[0]
                 centroid = Vertex(0, 0)
                 total_area = 0
@@ -62,7 +78,13 @@ class Lloyd:
                     total_area += triangle_area
                     centroid.x += triangle_area*triangle_centroid.x
                     centroid.y += triangle_area*triangle_centroid.y
-                centroid.x /= total_area
-                centroid.y /= total_area
-                new_vertices.append(centroid)
+
+                #check if the cell is degenerated
+                if total_area > 0.001:
+                    centroid.x /= total_area
+                    centroid.y /= total_area
+                    new_vertices.append(centroid)
+                else:
+                    new_vertices.append(vertex)
+
             self.vertices = new_vertices
