@@ -288,63 +288,79 @@ class VoronoiGrid:
 						max(abs(edge.p[1].x - self.delaunayGrid.box_middle.x), \
 						abs(edge.p[1].y - self.delaunayGrid.box_middle.y)) >= self.delaunayGrid.box_size / 2:
 						infinite_edges.append(edge)
-
-				if len(intersections) == 0:
-					continue
 				
 				for i in range(len(infinite_edges)):
 					cell_edges.remove(infinite_edges[i])
 				
 				cell_edges += finite_edges
-
-				#intersections are on the same edge of the bounding box
-				if (abs(intersections[0].x - intersections[1].x) < 0.00001 and 
-					self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) > 0.00001) or \
-					(abs(intersections[0].y - intersections[1].y) < 0.00001 and 
-					self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) > 0.00001):
-
-					cell_edges.append(Edge(intersections[0], intersections[1]))
-				#intersections are on different edges of the bounding box
-				else:
-					#intersections are on paralel edges of the bounding box -> we need to add two corners
-					if self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) < 0.00001:
-						if cell_vertex.y - self.delaunayGrid.box_middle.y <= 0:
-							corners_y = self.delaunayGrid.box_middle.y - self.delaunayGrid.box_size / 2
-							corner1 = Vertex(intersections[0].x, corners_y)
-							corner2 = Vertex(intersections[1].x, corners_y)
-							cell_edges.append(Edge(intersections[0], corner1))
-							cell_edges.append(Edge(intersections[1], corner2))
-							cell_edges.append(Edge(corner1, corner2))
-						else:
-							corners_y = self.delaunayGrid.box_middle.y + self.delaunayGrid.box_size / 2
-							corner1 = Vertex(intersections[0].x, corners_y)
-							corner2 = Vertex(intersections[1].x, corners_y)
-							cell_edges.append(Edge(intersections[0], corner1))
-							cell_edges.append(Edge(intersections[1], corner2))
-							cell_edges.append(Edge(corner1, corner2))
-
-					elif self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) < 0.00001:
-						if cell_vertex.x - self.delaunayGrid.box_middle.x <= 0:
-							corners_x = self.delaunayGrid.box_middle.x - self.delaunayGrid.box_size / 2
-							corner1 = Vertex(corners_x, intersections[0].y)
-							corner2 = Vertex(corners_x, intersections[1].y)
-							cell_edges.append(Edge(intersections[0], corner1))
-							cell_edges.append(Edge(intersections[1], corner2))
-							cell_edges.append(Edge(corner1, corner2))
-						else:
-							corners_x = self.delaunayGrid.box_middle.x + self.delaunayGrid.box_size / 2
-							corner1 = Vertex(corners_x, intersections[0].y)
-							corner2 = Vertex(corners_x, intersections[1].y)
-							cell_edges.append(Edge(intersections[0], corner1))
-							cell_edges.append(Edge(intersections[1], corner2))
-							cell_edges.append(Edge(corner1, corner2))
-					#intersetions are on perpendicular edges of the bounding box
-					elif abs(intersections[0].x - self.delaunayGrid.box_middle.x) > abs(intersections[1].x - self.delaunayGrid.box_middle.x):
-						corner = Vertex(intersections[0].x, intersections[1].y)
-						cell_edges.append(Edge(intersections[0], corner))
-						cell_edges.append(Edge(intersections[1], corner))
+				
+				if len(intersections) == 4:
+					#check which intersections are on the same edge of the bounding box
+					if (abs(intersections[0].x - intersections[1].x) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) > 0.00001) or \
+						(abs(intersections[0].y - intersections[1].y) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) > 0.00001):
+						cell_edges.append(Edge(intersections[0], intersections[1]))
+						cell_edges.append(Edge(intersections[2], intersections[3]))
+					elif(abs(intersections[0].x - intersections[2].x) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) > 0.00001) or \
+						(abs(intersections[0].y - intersections[2].y) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) > 0.00001):
+						cell_edges.append(Edge(intersections[0], intersections[2]))
+						cell_edges.append(Edge(intersections[1], intersections[3]))
 					else:
-						corner = Vertex(intersections[1].x, intersections[0].y)
-						cell_edges.append(Edge(intersections[0], corner))
-						cell_edges.append(Edge(intersections[1], corner))
+						cell_edges.append(Edge(intersections[0], intersections[3]))
+						cell_edges.append(Edge(intersections[1], intersections[2]))
+
+				elif len(intersections) == 2:
+					#intersections are on the same edge of the bounding box
+					if (abs(intersections[0].x - intersections[1].x) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) > 0.00001) or \
+						(abs(intersections[0].y - intersections[1].y) < 0.00001 and 
+						self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) > 0.00001):
+
+						cell_edges.append(Edge(intersections[0], intersections[1]))
+					#intersections are on different edges of the bounding box
+					else:
+						#intersections are on paralel edges of the bounding box -> we need to add two corners
+						if self.delaunayGrid.box_size - abs(intersections[0].x - intersections[1].x) < 0.00001:
+							if cell_vertex.y - self.delaunayGrid.box_middle.y <= 0:
+								corners_y = self.delaunayGrid.box_middle.y - self.delaunayGrid.box_size / 2
+								corner1 = Vertex(intersections[0].x, corners_y)
+								corner2 = Vertex(intersections[1].x, corners_y)
+								cell_edges.append(Edge(intersections[0], corner1))
+								cell_edges.append(Edge(intersections[1], corner2))
+								cell_edges.append(Edge(corner1, corner2))
+							else:
+								corners_y = self.delaunayGrid.box_middle.y + self.delaunayGrid.box_size / 2
+								corner1 = Vertex(intersections[0].x, corners_y)
+								corner2 = Vertex(intersections[1].x, corners_y)
+								cell_edges.append(Edge(intersections[0], corner1))
+								cell_edges.append(Edge(intersections[1], corner2))
+								cell_edges.append(Edge(corner1, corner2))
+
+						elif self.delaunayGrid.box_size - abs(intersections[0].y - intersections[1].y) < 0.00001:
+							if cell_vertex.x - self.delaunayGrid.box_middle.x <= 0:
+								corners_x = self.delaunayGrid.box_middle.x - self.delaunayGrid.box_size / 2
+								corner1 = Vertex(corners_x, intersections[0].y)
+								corner2 = Vertex(corners_x, intersections[1].y)
+								cell_edges.append(Edge(intersections[0], corner1))
+								cell_edges.append(Edge(intersections[1], corner2))
+								cell_edges.append(Edge(corner1, corner2))
+							else:
+								corners_x = self.delaunayGrid.box_middle.x + self.delaunayGrid.box_size / 2
+								corner1 = Vertex(corners_x, intersections[0].y)
+								corner2 = Vertex(corners_x, intersections[1].y)
+								cell_edges.append(Edge(intersections[0], corner1))
+								cell_edges.append(Edge(intersections[1], corner2))
+								cell_edges.append(Edge(corner1, corner2))
+						#intersetions are on perpendicular edges of the bounding box
+						elif abs(intersections[0].x - self.delaunayGrid.box_middle.x) > abs(intersections[1].x - self.delaunayGrid.box_middle.x):
+							corner = Vertex(intersections[0].x, intersections[1].y)
+							cell_edges.append(Edge(intersections[0], corner))
+							cell_edges.append(Edge(intersections[1], corner))
+						else:
+							corner = Vertex(intersections[1].x, intersections[0].y)
+							cell_edges.append(Edge(intersections[0], corner))
+							cell_edges.append(Edge(intersections[1], corner))
 					

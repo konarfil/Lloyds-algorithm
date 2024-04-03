@@ -10,10 +10,6 @@ class Lloyd:
         Randomly choose positions of initial vertices
         """
         self.vertices = []
-        self.vertices.append(Vertex(0.25, 0.75))
-        self.vertices.append(Vertex(0.5, 0.75))
-        self.vertices.append(Vertex(0.75, 0.75))
-        self.vertices.append(Vertex(0.5, 0.25))
 
         for i in range(N_points):
             self.vertices.append(Vertex(random.random(), random.random()))
